@@ -37,7 +37,7 @@ If you already have a kubernetes cluster and want to dive right into it, [check 
 
 I prefer a completely fresh playground for testing
 
-* a single container Rancher "cluster" with istio, I might dedicate another post to this because it is just awesome
+* [a single container Rancher "cluster" with istio](http://localhost:4000/tools/2023/09/03/rancher-devcluster-all-in-one.html){:target="_blank"}
 * clone of the [Atlassian helm charts](https://github.com/atlassian/data-center-helm-charts){:target="_blank"}
 * if you are helm deploying from source checkout, copy the common chart into `confluence/charts/`.
 * helm and kubectl binaries with kubeconfig fetched from Rancher
