@@ -1,6 +1,6 @@
 ---
 layout: post
-title:  "Rancher Development Test Cluster in Your Pocket"
+title:  "Pocket sized Development Cluster with Rancher"
 date:   2023-09-03 18:00:00 +0200
 categories: tools
 ---
@@ -46,7 +46,7 @@ sudo docker run --rm -ti \
 
 {% endhighlight %}
 
-That is all. Initial startup will take a few minutes as rancher is pulling all the required images. But once that is done and you have set the admin password to something development friendly like, errm, admin, you can start deploying workloads. Or just marvel at the sight. Or go and impress some noobs. Or managers.
+That is all. Initial startup will take a few minutes as rancher is pulling all the required images. But once that is done and you have set the admin password to something development friendly like, errm *admin*, you can start deploying workloads. Or just marvel at the sight. Or go and impress some noobs. Or managers.
 
 ![rancher aio](/assets/images/20230903_01.png)
 

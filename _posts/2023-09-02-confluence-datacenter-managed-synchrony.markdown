@@ -1,6 +1,6 @@
 ---
 layout: post
-title:  "Confluence Datacenter with Managed Synchrony - Using Official Atlassian Chart and Image"
+title:  "Managed Synchrony with Confluence Data Center - Using Official Atlassian Chart and Image"
 date:   2023-09-02 18:35:41 +0200
 categories: atlassian
 ---
@@ -33,11 +33,11 @@ Members {size:2, ver:2} [
 
 # Test Setup
 
-If you already have a kubernetes cluster and want to dive right into it, [check my chart overrides](https://gist.github.com/mdraheim/04812dd7fc5c97aeff2b83f128a204ac#file-confluence-dc-managed-synch-8-5-0-overrides-yaml){:target="_blank"} and happy helming.
+If you already have a kubernetes cluster and want to dive right into it, [check my chart overrides](https://gist.github.com/mdraheim/04812dd7fc5c97aeff2b83f128a204ac#file-confluence-dc-managed-synch-8-5-0-overrides-yaml){:target="_blank"}, Happy Helming!
 
 I prefer a completely fresh playground for testing
 
-* [a single container Rancher "cluster" with istio](http://localhost:4000/tools/2023/09/03/rancher-devcluster-all-in-one.html){:target="_blank"}
+* [a single container Rancher "cluster" with istio](https://mdraheim.github.io/tools/2023/09/03/rancher-devcluster-all-in-one.html){:target="_blank"}
 * clone of the [Atlassian helm charts](https://github.com/atlassian/data-center-helm-charts){:target="_blank"}
 * if you are helm deploying from source checkout, copy the common chart into `confluence/charts/`.
 * helm and kubectl binaries with kubeconfig fetched from Rancher
@@ -54,7 +54,7 @@ In the Rancher cluster
 Atlassian may not support the setup but with a few tricks in overrides one can bend the chart to do it. In summary, we need
 
 * additional ports on the pod
-* env override to disable the disablement of managed synchrony
+* env override to disable the disabling of managed synchrony
 * additional configmap to put synchrony properties into synchrony-args.properties
 
 I will explain the relevant parts of the `diff -uw values.yaml overrides.yaml`. Chart and image version here is 8.5.0. The full overrides file is [here](https://gist.github.com/mdraheim/04812dd7fc5c97aeff2b83f128a204ac#file-confluence-dc-managed-synch-8-5-0-overrides-yaml){:target="_blank"}. Again, be warned that this is a testing configuration. In my overrides, all security things are disabled.
@@ -89,7 +89,7 @@ Shared home pvc. In Rancher, just go to Storage and create a pv of hostpath type
    #
 {% endhighlight %}
 
-I set confluence back to its default hazelcast port. Which means the upstream hazelcast default is free for synchrony to use. It would also be possible to do the reverse, like having confluence on 5701 and synchrony on 5801. But that would make the confusion complete because when, for lack of a kubernetes cluster, you try to test with a plain docker stack, confluence would come up on port 5801 and synchrony on 5701. So let's configure this the same here.
+I set confluence back to its default hazelcast port. Which means the upstream hazelcast default is free for synchrony to use. It would also be possible to do it the other way around, like having confluence on 5701 and synchrony on 5801. But that would make the confusion complete because when, for lack of a kubernetes cluster, you try to test with a plain docker stack, confluence would come up on port 5801 and synchrony on 5701. So let's configure this the same here.
 
 {% highlight diff %}
 @@ -696,7 +696,7 @@
@@ -112,7 +112,7 @@ I set confluence back to its default hazelcast port. Which means the upstream ha
    # system properties.
 {% endhighlight %}
 
-Sure I want datacenter and, yes, I want the entrypoint to replace confluence.cfg.xml on disk. These testing overrides use emptyDir dir for local-home anyway.
+Sure I want datacenter and, yes, I want the entrypoint to replace confluence.cfg.xml on disk. These testing overrides use emptyDir for local-home anyway.
 
 {% highlight diff %}
 @@ -890,14 +890,27 @@
@@ -148,7 +148,7 @@ Sure I want datacenter and, yes, I want the entrypoint to replace confluence.cfg
    # Note that this will not create any corresponding volume mounts;
 {% endhighlight %}
 
-Here is where the fun starts. Atlassian devs actually hardcoded properties to disable synchrony in datacenter mode. See [chart _helpers.tpl](https://github.com/atlassian/data-center-helm-charts/blob/main/src/main/charts/confluence/templates/_helpers.tpl){:target="_blank"}. Those properties then go to a configmap which then ends up being sourced into a container env JVM_SUPPORT_RECOMMENDED_ARGS in the pod template. Luckily, additional envs defined in the overrides file get templated into a position after the generated ones. So I can just override the blocking configmap based env with a duplicated env name. The first property is also in the configmap, the second is somewhat redundantly (because of the container env HAZELCAST_KUBERNETES_SERVICE_PORT) telling the hazelcast kubernetes plugin the service port which is important because it also applies to the **remote** ports hazelcast is scanning, the third property enables the manged synchrony-proxy.
+Here is where the fun starts. Atlassian devs actually hardcoded properties to disable synchrony in datacenter mode. See [chart _helpers.tpl](https://github.com/atlassian/data-center-helm-charts/blob/main/src/main/charts/confluence/templates/_helpers.tpl){:target="_blank"}. Those properties then go to a configmap which then ends up being sourced into a container env JVM_SUPPORT_RECOMMENDED_ARGS in the pod template. Luckily, additional envs defined in the overrides file get templated into a position after the generated ones. So I can just override the blocking configmap based env with a duplicated env name. The first property is also in the configmap, the second is somewhat redundantly (because of the container env HAZELCAST_KUBERNETES_SERVICE_PORT) telling the hazelcast kubernetes plugin the service port which is important because it also applies to the **remote** ports hazelcast is scanning, the third property enables the manged synchrony-proxy. Instead of overriding the JVM_SUPPORT env I could just as well have set CATALINA_OPTS with the prop keys and different values. Works as long as my props come after the generated props. Last one wins.
 
 Next is podspec container ports. I also added the aleph port, though I have no idea what that is used for. Note that those ports do not have to be listed in the svc manifest. Hazelcast works between hosts (=pods) and only requires the svc name to get pod ip from the endpoints attached to the service.
 
@@ -192,12 +192,12 @@ Helm template with overrides, check output for obvious errors, then install. On 
 
 A few points that were mildly irritating in this Quest for True Confluence:
 
-Forget documentation. It is outdated, incomplete, sometimes contradicting itself. Well, that is why there is source code. I have not checked Confluence source code because I am still recovering from having read Jira source code years back. Hazelcast source code would be sufficient. Or so I thought and happily went down the wrong alley. Confluence uses hazelcast 3.12 and the (then separate) kubernetes plugin 1.5 but search engines will direct you to current hazelcast 4 which has incorporated the plugin. This together with official hazelcast docker images produces massive confusion about which envs or properties are considered by hazelcast kubernetes. There is the HAZELCAST_KUBERNETES prefix but you commonly find a HZ prefix or other creations. Hazelcast accepts very few global properties and relies on either its xml config or programmatic setting of properties. Which means there is very little one can just set on the command line for testing.
+Forget documentation. It is outdated, incomplete, sometimes contradicting itself. Well, that is why there is source code. I have not checked Confluence source code because I am still recovering from having read Jira source code years back. Hazelcast source code would be sufficient. Or so I thought and happily went down the wrong alley. Confluence uses hazelcast 3.12 and the (then separate) kubernetes plugin 1.5 but search engines will direct you to current hazelcast 4 which has incorporated the plugin. This together with official hazelcast docker images produces massive confusion about which envs or properties are considered by hazelcast kubernetes. There is the HAZELCAST_KUBERNETES prefix but you commonly find a HZ prefix or other creations. Hazelcast accepts very few global properties and relies on either its xml config or programmatic setting of properties. Which means there is very little one can just set on the command line for testing. At one point I was so fed up with the prop chaos, I considered configmapping a hazelcast xml to finally get this going.
 
-Confluence itself is not any better at it. There are more global properties to set than with hazelcast but one never knows if those properties are considered at all. Example is the confluence.cluster.authentication property which, because of its impact, should be a global OPTS property but is not. It can only be set in cfg.xml. Worse, if you set this prop to false and think you do not need the sister prop with the secret, be ready for strange NPE. Why do I need a secret, when auth is disabled? And please add this the the cfg.xml.j2 template in the image.
+Confluence itself is not any better at it. There are more global properties to set than with hazelcast but one never knows if those properties are considered at all. Example is the confluence.cluster.authentication property which, because of its impact, should be a global OPTS property but is not. It can only be set in cfg.xml. Worse, if you set this prop to false and think you do not need the sister prop with the secret, be ready for strange NPE, which naturally do not tell what the key is where the value is null. Please add this to the cfg.xml.j2 template in the image.
 
-Alright, then there are all the properties prefixed with synchrony which lure you into thinking you can actually configure things for the synchrony jvm. Nope, the best you get is making a recommendation which most of the time the confluence synchrony process builder will happily ignore. Why is the process builder passing 0.0.0.0 to managed synchrony when confluence knows its own ip? Yes, yes, there could be multiple ip to the same host. But in a kubernetes context? And why is sychrony-args.properties file even necessary?
+Alright, then there are all the properties prefixed with synchrony which lure you into thinking you can actually configure things for the synchrony jvm. Nope, the best you get is making a recommendation which most of the time the confluence synchrony process builder will happily ignore. Just go straight for synchrony-args.properties.
 
-The chart is actually the best thing in all of this. With the exception of the parts that assume you either have external synchrony or none at all, the chart is fairly sane and offers a lot of additionalSomething fields. The port switch from 5801 to 5701 is unfortunate and so is making that into a container env for hazelcast. Took me quite some time to figure out that either the prop hazelcast.kubernetes.service-port or the env is required for proper discovery operation. In my first tests, synchrony on port 5701 always discovered the confluence on port 5801, found a different cluster name, and then blacklisted the ip. So for clarity's sake and working discovery, always set the property to the jvm directly. Do not be tempted to set an env because that affects both the confluence hazelcast and the synchrony hazelcast.
+The chart is actually the best thing in all of this. With the exception of the parts that assume you either have external synchrony or none at all, the chart is fairly sane and offers a lot of additionalSomething fields. The port switch from 5801 to 5701 is unfortunate and so is making that into a container env for hazelcast. Took me quite some time to figure out that either the prop hazelcast.kubernetes.service-port or the env is required for proper discovery operation. In my first tests, synchrony on port 5701 always discovered the confluence on port 5801, found a different cluster name, and then blacklisted the ip. So for clarity's sake and working discovery, always set the property to the jvm directly. Do not be tempted to set an env because that affects both the confluence hazelcast and the synchrony hazelcast. In short, both HAZELCAST_KUBERNETES envs should be dropped from the chart. Those can be templated as jvm properties just like the others.
 
 
